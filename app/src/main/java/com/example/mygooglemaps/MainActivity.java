@@ -7,6 +7,8 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,17 +19,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.w3c.dom.Text;
 
+import java.util.List;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final int FAST_UPDATE_INTERVAL = 30;
-    public static final int DEFAULT_UPDATE_INTERVAL = 30;
+    public static final int FAST_UPDATE_INTERVAL = 1;
+    public static final int DEFAULT_UPDATE_INTERVAL = 1;
 
 
     TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address;
@@ -38,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
 
     //Config File for to apply diff setting to fusedlocationproviderclient.
     LocationRequest locationRequest;
+
+    LocationCallback locationCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +66,19 @@ public class MainActivity extends AppCompatActivity {
         //For Setting Accuracy
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
+        //For tracking....
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+
+                Location locationUpdated = locationResult.getLastLocation();
+                UpdateUIValues(locationUpdated);
+
+            }
+        };
+
+
         sw_gps.setOnClickListener(view -> {
             if (sw_gps.isChecked()) {
                 locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -69,12 +90,16 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
+
         sw_locationupdates.setOnClickListener(view -> {
-            if(sw_locationupdates.isChecked()){
+            if (sw_locationupdates.isChecked()) {
                 //Track Location each 3 sec...
+                tv_updates.setText("Location is tracking");
                 StartLocationUpdate();
-            }else{
+            }
+            if (!sw_locationupdates.isChecked()) {
                 //Stop Tracking...
+                tv_updates.setText("Location is not tracking");
                 StopLocationUpdate();
             }
         });
@@ -82,17 +107,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void StopLocationUpdate() {
-        tv_address.setText("");
-        tv_speed.setText("");
-        tv_altitude.setText("");
-        tv_accuracy.setText("");
-        tv_lon.setText("");
-        tv_lat.setText("");
-        tv_sensor.setText("");
+        tv_address.setText("Not Tracking");
+        tv_speed.setText("Not Tracking");
+        tv_altitude.setText("Not Tracking");
+        tv_accuracy.setText("Not Tracking");
+        tv_lon.setText("Not Tracking");
+        tv_lat.setText("Not Tracking");
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+
     }
 
     private void StartLocationUpdate() {
-
+        tv_updates.setText("Location is being tracked");
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        }
     }
 
     private void XmlInitializations() {
@@ -175,6 +204,16 @@ public class MainActivity extends AppCompatActivity {
             tv_speed.setText(String.valueOf(location.getSpeed()));
         }else{
             tv_speed.setText("Speed Not Available");
+        }
+
+        Geocoder geocoder = new Geocoder(MainActivity.this);
+
+        try {
+            List<Address> address = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
+            tv_address.setText(address.get(0).getAddressLine(0));
+        }
+        catch (Exception e){
+
         }
 
 
