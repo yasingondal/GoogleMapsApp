@@ -13,7 +13,9 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,8 +27,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import org.w3c.dom.Text;
-
 import java.util.List;
 
 
@@ -36,16 +36,23 @@ public class MainActivity extends AppCompatActivity {
     public static final int DEFAULT_UPDATE_INTERVAL = 1;
 
 
-    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address;
+    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address,tv_CountOfCrumbs;
     Switch sw_locationupdates, sw_gps;
+    Button btn_showWayPointList,btn_newWayPoint;
+
 
     //Google api for Location Services...
     FusedLocationProviderClient fusedLocationProviderClient;
 
     //Config File for to apply diff setting to fusedlocationproviderclient.
     LocationRequest locationRequest;
-
     LocationCallback locationCallback;
+
+    //Device Current Location..
+    Location CurrentLocation;
+
+    //All the saved locations List.
+    List<Location> SavedLocations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +111,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        btn_newWayPoint.setOnClickListener(view -> {
+            //Grab Location and add inside List...
+            MyApplication myApplication = (MyApplication) getApplicationContext();
+
+            SavedLocations = myApplication.getMyLocations();
+            SavedLocations.add(CurrentLocation);
+
+        });
+
+        btn_showWayPointList.setOnClickListener(view -> {
+            //Fetch data and Show on MapView...
+        });
     }
 
     private void StopLocationUpdate() {
@@ -133,9 +153,13 @@ public class MainActivity extends AppCompatActivity {
         tv_updates = findViewById(R.id.tv_updates);
         tv_sensor = findViewById(R.id.tv_sensor);
         tv_address = findViewById(R.id.tv_address);
+        tv_CountOfCrumbs = findViewById(R.id.tv_CountOfCrumbs);
 
         sw_locationupdates = findViewById(R.id.sw_locationsupdates);
         sw_gps = findViewById(R.id.sw_gps);
+
+        btn_newWayPoint = findViewById(R.id.btn_newWayPoint);
+        btn_showWayPointList = findViewById(R.id.btnShowWayPoint);
     }
 
     // All The Requests for Permissions..
@@ -180,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onSuccess(Location location) {
                     // Do all the code for lat,lon etc....
                     UpdateUIValues(location);
+                    CurrentLocation = location;
                 }
             });
         }
@@ -201,10 +226,14 @@ public class MainActivity extends AppCompatActivity {
 
         //For Altitude
         if(location.hasSpeed()){
-            tv_speed.setText(String.valueOf(location.getSpeed()));
+            int AccurateSpeed = (int) (location.getSpeed()*3);
+            tv_speed.setText(String.valueOf(AccurateSpeed));
         }else{
             tv_speed.setText("Speed Not Available");
         }
+
+        //Find the Size of SavedLocations List...
+
 
         Geocoder geocoder = new Geocoder(MainActivity.this);
 
@@ -213,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
             tv_address.setText(address.get(0).getAddressLine(0));
         }
         catch (Exception e){
-
+            tv_address.setText(e.getMessage());
         }
 
 
