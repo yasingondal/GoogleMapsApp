@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address,tv_CountOfCrumbs;
     Switch sw_locationupdates, sw_gps;
     Button btn_showWayPointList,btn_newWayPoint;
+    Button btn_showMap;
 
 
     //Google api for Location Services...
@@ -122,8 +123,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btn_showWayPointList.setOnClickListener(view -> {
-            //Fetch data and Show on MapView...
+            Intent i = new Intent(MainActivity.this,ShowSavedLocations.class);
+            startActivity(i);
         });
+
+        btn_showMap.setOnClickListener(view -> {
+            Intent i = new Intent(MainActivity.this,MapsActivity.class);
+            startActivity(i);
+        });
+
+
     }
 
     private void StopLocationUpdate() {
@@ -160,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
 
         btn_newWayPoint = findViewById(R.id.btn_newWayPoint);
         btn_showWayPointList = findViewById(R.id.btnShowWayPoint);
+        btn_showMap = findViewById(R.id.btn_showMap);
     }
 
     // All The Requests for Permissions..
@@ -233,8 +243,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //Find the Size of SavedLocations List...
-
-
         Geocoder geocoder = new Geocoder(MainActivity.this);
 
         try {
